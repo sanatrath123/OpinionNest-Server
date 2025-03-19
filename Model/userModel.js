@@ -10,7 +10,7 @@ const userSchema = new Schema({
     password:{
         type:String , minLength:4 , required:true
     }
-})
+},{timestamps:true, strict:"throw"})
 
 
 const userCol =  mongoose.model("user",userSchema)

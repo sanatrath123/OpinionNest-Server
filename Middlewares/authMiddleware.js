@@ -1,4 +1,4 @@
-import userModel from "../Model/userModel"
+import userModel from "../Model/userModel.js"
 
 const AuthCheeck = async(req,res,next)=>{
     const {uid} = req.cookies

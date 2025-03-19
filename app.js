@@ -2,6 +2,8 @@ import express from 'express'
 import cors from 'cors'
 import cookieparser from 'cookie-parser'
 import userRoutes from './Routes/userRoutes.js'
+import postRoutes from "./Routes/postRoutes.js"
+
 
 import "./config/db.js"
 
@@ -15,6 +17,7 @@ app.use(cookieparser())
 
 
 app.use("/user",userRoutes )
+app.use("/post",postRoutes)
 
 app.use((err,req,res,next)=>{
     res.status(404).json({error:"internal server error"})

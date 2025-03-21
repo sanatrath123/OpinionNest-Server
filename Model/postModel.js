@@ -1,5 +1,4 @@
-import mongoose, { Schema } from 'mongoose'
-
+import mongoose, { Schema, set } from 'mongoose'
 
 const fileSchema = new Schema({
 _id:{
@@ -19,10 +18,22 @@ const postSchema = new Schema({
     },
     likes:{ type:[Schema.Types.ObjectId], default:[] },
     author:{
-        type:Schema.Types.ObjectId , required:true
+        type:Schema.Types.ObjectId , required:true, ref:'user'
+    },
+    commentSection:{
+id:Schema.Types.ObjectId , totalCmt:{type:Number, default:0}
     },
     filesInfo:{ type:[fileSchema], default:[] }
-}, {strict:'throw' , timestamps:true})
+}, {
+    methods:{
+        settotalCmt(val){
+            if(val=="remove" &&  this.commentSection.totalCmt>0){
+return this.commentSection.totalCmt-=1
+            }
+            return this.commentSection.totalCmt+=1
+        }
+    },
+    strict:'throw' , timestamps:true})
 
 
 const PostModel = mongoose.model("post", postSchema)

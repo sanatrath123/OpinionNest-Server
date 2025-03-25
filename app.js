@@ -8,7 +8,9 @@ import postRoutes from "./Routes/postRoutes.js"
 import "./config/db.js"
 
 const app = express()
+
 const port = process.env.port 
+
 
 app.use(cors({
     origin:'http://localhost:5173', credentials:true

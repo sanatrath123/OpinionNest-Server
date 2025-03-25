@@ -14,13 +14,28 @@ const commentSchema = new Schema({
         type:Schema.Types.ObjectId , required:true
     },
     comments:{ type:[userCommentsSchema] , default:[]},
+    isDeleted:{type:Boolean , default:false}
 }, {  virtuals:{
     totlaCmt:{get(){
      return   this.comments?.length
     },
     }
 } , 
+methods:{
+    deleteModel(val){
+        console.log(val)
+       return this.isDeleted ? this.isDeleted=false : this.isDeleted=true
+    },
+
+    //user commnets crud
+    deleteUserCmt(id){
+ this.comments = this.comments.filter((userCmt)=>userCmt.id != id)
+    }
+}
+,
   strict:"throw", timestamps:true})
+
+
 
 const commentModel = mongoose.model('comment', commentSchema)
 

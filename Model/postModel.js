@@ -20,10 +20,14 @@ const postSchema = new Schema({
     author:{
         type:Schema.Types.ObjectId , required:true, ref:'user'
     },
+
+savedUsers:{type:[Schema.Types.ObjectId], default:[] },
+
     commentSection:{
 id:Schema.Types.ObjectId , totalCmt:{type:Number, default:0}
     },
-    filesInfo:{ type:[fileSchema], default:[] }
+    filesInfo:{ type:[fileSchema], default:[] },
+    isDeleted:{type:Boolean , default:false}
 }, {
     methods:{
         settotalCmt(val){
@@ -31,7 +35,32 @@ id:Schema.Types.ObjectId , totalCmt:{type:Number, default:0}
 return this.commentSection.totalCmt-=1
             }
             return this.commentSection.totalCmt+=1
-        }
+        },
+softDeletePost(){
+   return this.isDeleted ? this.isDeleted=false : this.isDeleted=true
+},
+
+//like unlike to the post
+likeUnLike(userId){
+    if(this.likes.includes(userId)){
+        return this.likes= this.likes.filter((uid)=>uid != userId)
+    }
+    return this.likes.push(userId)
+},
+//save Unsave post
+SaveUnSave(userId){
+    if(this.savedUsers.includes(userId)){
+        return this.likes= this.likes.filter((uid)=>uid != userId)
+    }
+    return this.savedUsers.push(userId)
+}
+    },
+    virtuals:{
+TotalLikes:{
+    get(){
+      return  this.likes.length
+    }
+}
     },
     strict:'throw' , timestamps:true})
 

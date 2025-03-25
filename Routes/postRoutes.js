@@ -1,15 +1,16 @@
 import express from "express";
 import mongoose from "mongoose";
-import multer from 'multer'
-import path from "path"
-import { CreateNewPost,GetAllPosts,  Getpost } from "../Controllers/postController.js";
+import multer from 'multer';
+import path from "path";
+import { CreateNewPost, GetAllPosts, Getpost, DeletePost,UpdatePostByAuthor ,LikeOrSavePost} from "../Controllers/postController.js";
 import PostModel from "../Model/postModel.js";
 import commentModel from "../Model/commentsModel.js";
 import CheeckID from "../Middlewares/isValidID.js";
+import fs from 'fs';
 
 const router = express.Router()
 
-router.param('id',CheeckID)
+router.param('postId',CheeckID)
 
 
 const storage = multer.diskStorage({
@@ -31,12 +32,18 @@ router.post('/', upload.fields([{name:'files', maxCount:4}]) ,CreateNewPost)
 
 router.get('/',GetAllPosts)
 
+router.route('/:postId').get(Getpost).delete(DeletePost).patch(UpdatePostByAuthor)
+
+router.put("/:postId/:action", LikeOrSavePost)
+
+router.get('/file/:fileId', async (req,res,next)=>{
+    const {fileId} = req.params
+    const readStream = fs.createReadStream(`${process.cwd()}/uploads/${fileId}`)
+    readStream.pipe(res)
+    })
 
 
-router.get('/:id',Getpost)
 
-router.patch('/:id',()=>{
-    console.log("hi from router")
-} )
+
 
 export default router

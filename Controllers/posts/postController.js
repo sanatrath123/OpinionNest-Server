@@ -1,8 +1,7 @@
 import mongoose from "mongoose"
-import PostModel from "../Model/postModel.js";
-import commentModel from "../Model/commentsModel.js";
+import PostModel from "../../Model/posts/postModel.js";
+import commentModel from "../../Model/posts/commentsModel.js";
 import fs from 'node:fs/promises'
-import { error } from "node:console";
 
 export const CreateNewPost = async (req,res,next)=>{
 const session = await mongoose.startSession()

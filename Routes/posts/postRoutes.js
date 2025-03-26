@@ -2,13 +2,16 @@ import express from "express";
 import mongoose from "mongoose";
 import multer from 'multer';
 import path from "path";
-import { CreateNewPost, GetAllPosts, Getpost, DeletePost,UpdatePostByAuthor ,LikeOrSavePost} from "../Controllers/postController.js";
-import PostModel from "../Model/postModel.js";
-import commentModel from "../Model/commentsModel.js";
-import CheeckID from "../Middlewares/isValidID.js";
+import { CreateNewPost, GetAllPosts, Getpost, DeletePost,UpdatePostByAuthor ,LikeOrSavePost} from "../../Controllers/posts/postController.js";
+import PostModel from "../../Model/posts/postModel.js";
+import commentModel from "../../Model/posts/commentsModel.js";
+import CheeckID from "../../Middlewares/isValidID.js";
 import fs from 'fs';
+import commentsRoutes from './commentRoutes.js'
 
 const router = express.Router()
+
+router.use('/comments',commentsRoutes )
 
 router.param('postId',CheeckID)
 

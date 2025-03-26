@@ -2,15 +2,16 @@ import userModel from "../Model/userModel.js"
 
 
 export const Signup = async(req,res,next)=>{
+    console.log(req.body)
 const {name , email , password} = req.body
 const isExist =await userModel.findOne({email:email}).lean()
 if(isExist?._id)return res.status(409).json({err:"user already exist"})
 try {
      await userModel.create({name, email , password})
      setCookies(res, userData._id)
-    res.status(201).json({message:"new user created successfully"})
+   return res.status(201).json({message:"new user created successfully"})
 } catch (error) {
-    console.log("error while creating a new user")
+    console.log("error while creating a new user",error)
     next(error)
 }
 }

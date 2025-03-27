@@ -14,8 +14,14 @@ const userCommentsSchema = new Schema({
         type:[Schema.Types.ObjectId], default:[]
     }
 },{
-
+ toJSON:{virtuals:true}, toObject:{virtuals:true}
 })
+
+userCommentsSchema.virtual('totalLikes').get(function(){ return this.likes.length})
+userCommentsSchema.virtual('totalDislikes').get(function(){ return this.dislikes.length})
+
+
+
 
 const commentSchema = new Schema({
     postId:{
@@ -27,7 +33,7 @@ const commentSchema = new Schema({
     virtuals:{
     totlaCmt:{
  get(){
-     return   this.comments?.length
+     return  this.comments?.length
     }
     }
 } , 
@@ -35,9 +41,8 @@ methods:{
     deleteModel(val){
         console.log(val)
        return this.isDeleted ? this.isDeleted=false : this.isDeleted=true
-    },
-}
-,
+    }
+}  , toJSON:{virtuals:true}, toObject:{virtuals:true},
   strict:"throw", timestamps:true})
 
 

@@ -17,6 +17,7 @@ const postSchema = new Schema({
         type:String , minLength:5 , maxLength:200 , required:true
     },
     likes:{ type:[Schema.Types.ObjectId], default:[] },
+    downVote:{type:[Schema.Types.ObjectId], default:[] },
     author:{
         type:Schema.Types.ObjectId , required:true, ref:'user'
     },
@@ -38,31 +39,18 @@ return this.commentSection.totalCmt-=1
         },
 softDeletePost(){
    return this.isDeleted ? this.isDeleted=false : this.isDeleted=true
-},
+}, 
+},  
+strict:'throw' , timestamps:true})
 
-//like unlike to the post
-likeUnLike(userId){
-    if(this.likes.includes(userId)){
-        return this.likes= this.likes.filter((uid)=>uid != userId)
-    }
-    return this.likes.push(userId)
-},
-//save Unsave post
-SaveUnSave(userId){
-    if(this.savedUsers.includes(userId)){
-        return this.likes= this.likes.filter((uid)=>uid != userId)
-    }
-    return this.savedUsers.push(userId)
-}
-    },
-    virtuals:{
-TotalLikes:{
-    get(){
-      return  this.likes.length
-    }
-}
-    },
-    strict:'throw' , timestamps:true})
+postSchema.virtual('TotalLikes').get(function(){
+    return  this.likes.length
+})
+
+postSchema.virtual('TotalDownVote').get(function(){
+    return  this.downVote.length
+})
+
 
 
 const PostModel = mongoose.model("post", postSchema)

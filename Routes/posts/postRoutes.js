@@ -2,7 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import multer from 'multer';
 import path from "path";
-import { CreateNewPost, GetAllPosts, Getpost, DeletePost,UpdatePostByAuthor ,LikeOrSavePost} from "../../Controllers/posts/postController.js";
+import { CreateNewPost, GetAllPosts, Getpost, DeletePost,UpdatePostByAuthor ,Like_Dislike_SavePost} from "../../Controllers/posts/postController.js";
 import PostModel from "../../Model/posts/postModel.js";
 import commentModel from "../../Model/posts/commentsModel.js";
 import CheeckID from "../../Middlewares/isValidID.js";
@@ -37,7 +37,7 @@ router.get('/',GetAllPosts)
 
 router.route('/:postId').get(Getpost).delete(DeletePost).patch(UpdatePostByAuthor)
 
-router.put("/:postId/:action", LikeOrSavePost)
+router.put("/:postId/:action", Like_Dislike_SavePost)
 
 router.get('/file/:fileId', async (req,res,next)=>{
     const {fileId} = req.params

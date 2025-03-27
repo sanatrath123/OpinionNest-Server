@@ -106,16 +106,42 @@ try {
 }
 
 //like comment and save by other user to a post
-export const LikeOrSavePost = async(req,res,next)=>{
-if(req.params.postId || req.params.action) return res.status(404).json({err:"Send a valid post"})
-const postData =await PostModel.findById(req.params.postId)
+export const Like_Dislike_SavePost = async(req,res,next)=>{
+if(!req.params.postId && !req.params.action) return res.status(404).json({err:"Send a valid post"})
+    const userId = req.userData._id
+try {
+    const postData =await PostModel.findById(req.params.postId)
 if(req.params.action=="like"){
-   postData.likeUnLike(req.userData._id)
+   if(postData.likes.includes(userId)){
+    await postData.updateOne({$pull:{likes:userId}})
+    return res.status(200).json('unliked')
+   } 
+   await postData.updateOne({$addToSet:{likes:userId}})
+   return res.status(200).json('liked')
 }
 if(req.params.action=="save"){
-    postData.SaveUnSave(req.userData._id)
+  if(postData.savedUsers.includes(userId)){
+    await postData.updateOne({$pull:{downVote:userId}})
+    return res.status(200).json('unsaved')
+  }
+  await postData.updateOne({$addToSet:{downVote:userId}})
+  return res.status(200).json('saved')
 }
-await postData.save()
+if(req.params.action == 'dislike'){
+    if(postData.downVote.includes(userId)){
+     await  postData.updateOne({$pull:{downVote:userId}})
+      return  res.status(200).json('down vote removed')
+    }
+    if(postData.likes.includes(userId)){
+        await postData.updateOne( { $pull:{likes:userId} , $addToSet:{downVote:userId} } )
+    }
+    await postData.updateOne({$addToSet:{downVote:userId}})
+    return  res.status(200).json({msg:'down vote added'})
+}
+
+} catch (error) {
+    console.log("error in like save controller", error)
+}
 }
 
 //restore the post

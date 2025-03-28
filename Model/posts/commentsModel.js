@@ -17,8 +17,8 @@ const userCommentsSchema = new Schema({
  toJSON:{virtuals:true}, toObject:{virtuals:true}
 })
 
-userCommentsSchema.virtual('totalLikes').get(function(){ return this.likes.length})
-userCommentsSchema.virtual('totalDislikes').get(function(){ return this.dislikes.length})
+userCommentsSchema.virtual('totalLikes').get(function(){ return this.likes?.length})
+userCommentsSchema.virtual('totalDislikes').get(function(){ return this.dislikes?.length})
 
 
 

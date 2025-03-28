@@ -25,7 +25,7 @@ const postSchema = new Schema({
 savedUsers:{type:[Schema.Types.ObjectId], default:[] },
 
     commentSection:{
-id:Schema.Types.ObjectId , totalCmt:{type:Number, default:0}
+id:{type:Schema.Types.ObjectId , ref:'comment'} , totalCmt:{type:Number, default:0}
     },
     filesInfo:{ type:[fileSchema], default:[] },
     isDeleted:{type:Boolean , default:false}
@@ -41,7 +41,7 @@ softDeletePost(){
    return this.isDeleted ? this.isDeleted=false : this.isDeleted=true
 }, 
 },  
-strict:'throw' , timestamps:true})
+strict:'throw' , timestamps:true, toJSON:{virtuals:true} , toObject:{virtuals:true}})
 
 postSchema.virtual('TotalLikes').get(function(){
     return  this.likes.length
@@ -49,6 +49,9 @@ postSchema.virtual('TotalLikes').get(function(){
 
 postSchema.virtual('TotalDownVote').get(function(){
     return  this.downVote.length
+})
+postSchema.virtual('TotalSaves').get(function(){
+    return  this.savedUsers.length
 })
 
 

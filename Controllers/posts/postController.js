@@ -9,7 +9,6 @@ const {title , content} = req.body
 const filesInfo = req.files.files.map((item)=>{return {_id:item.id , extension:item.extension}})
 const newPostId = new mongoose.Types.ObjectId()
 const newCmtSecId = new mongoose.Types.ObjectId()
-
 session.startTransaction()
 try {
     //create methord use new Model(doc).save() behibd the scene so it wont support tarnsaction
@@ -29,25 +28,27 @@ try {
 
 //GetAll posts
 export const GetAllPosts = async (req,res,next)=>{
+    const ST = performance.now()
    try {
-    const AllPosts = await PostModel.find().populate({path:'author' , select:'name'})
+    const AllPosts = await PostModel.find({isDeleted:false}).populate({path:'author' , select:'_id name'})
     res.status(200).json(AllPosts)
    } catch (error) {
     console.log("error whiel geting all post")
     res.status(404).json({err:"can not retrive the posts"})
    }
+   const ET = performance.now()
+   console.log(ET- ST)
 }
 
 //Get post by ID
 export const Getpost = async (req,res,next)=>{
-const {id} = req.params
+const {postId} = req.params
 try {
-    const postData = await PostModel.findOne({_id:id}).populate( 'commentSection' )
-//add {path:'author' , select:'name'} ,after implementing user routes
-console.log(id)
+    const postData = await PostModel.findOne({_id:postId, isDeleted:false}).populate( [{path:'author', select:'name'} ,{path:'commentSection.id', select:"comments.userId comments.usercmt comments.likes comments.dislikes " } ])
 res.status(200).json(postData)
 } catch (error) {
     console.log("error while get the file", error)
+    next(new Error())
 }
 }
 

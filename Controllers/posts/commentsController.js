@@ -1,16 +1,25 @@
+import mongoose from 'mongoose'
 import commentModel from '../../Model/posts/commentsModel.js'
+import PostModel from '../../Model/posts/postModel.js'
 
 
 export const AddNewCmnt = async(req,res,next)=>{
     const userId = req.userData._id
     const usercmt = req.body.comment
+    const cmtSecId = req.params.cmtId
+    const session =await mongoose.startSession()
    try {
-    await commentModel.findByIdAndUpdate(req.params.cmtId , {$push:{comments:{userId , usercmt}}})
+    session.startTransaction()
+ const cmtSecData =  await commentModel.findByIdAndUpdate({_id:cmtSecId} , {$push:{comments:{userId , usercmt}}}, {session})
+    await PostModel.updateOne({_id:cmtSecData.id, 'commentSection.id':cmtSecId} , {$inc:{'commentSection.totalCmt':1}}, {session})
     res.status(201).json({msg:"new cmnt added"})
+   await session.commitTransaction()
    } catch (error) {
+   await session.abortTransaction()
     console.log("error while adding a commnet" , error)
     next(new Error())
    }
+  await session.endSession()
 }
 
 
@@ -93,9 +102,7 @@ try {
     res.status(200).json(updatedData)
    } catch (error) {
    return console.log("while remove the like from cmt",error)
-   }
-
-   
+   } 
 }
 
 export const DisLikeComment = async(req, res)=>{

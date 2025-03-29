@@ -3,8 +3,6 @@ import mongoose from "mongoose";
 import multer from 'multer';
 import path from "path";
 import { CreateNewPost, GetAllPosts, Getpost, DeletePost,UpdatePostByAuthor ,Like_Dislike_SavePost} from "../../Controllers/posts/postController.js";
-import PostModel from "../../Model/posts/postModel.js";
-import commentModel from "../../Model/posts/commentsModel.js";
 import CheeckID from "../../Middlewares/isValidID.js";
 import fs from 'fs';
 import commentsRoutes from './commentRoutes.js'
@@ -21,6 +19,7 @@ const storage = multer.diskStorage({
 cb(null , './uploads')
     },
     filename:function(req,file , cb){
+        console.log(file?.originalname,"from routes")
         const extension = path.extname(file?.originalname)
         const fileId = new mongoose.Types.ObjectId()
         file.id = fileId

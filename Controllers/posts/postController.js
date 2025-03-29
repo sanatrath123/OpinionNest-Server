@@ -6,7 +6,7 @@ import fs from 'node:fs/promises'
 export const CreateNewPost = async (req,res,next)=>{
 const session = await mongoose.startSession()
 const {title , content} = req.body
-const filesInfo = req.files.files.map((item)=>{return {_id:item.id , extension:item.extension}})
+const filesInfo = req.files?.files.map((item)=>{return {_id:item.id , extension:item.extension}})
 const newPostId = new mongoose.Types.ObjectId()
 const newCmtSecId = new mongoose.Types.ObjectId()
 session.startTransaction()
@@ -22,7 +22,6 @@ try {
     next(error)
 }finally{
     await session.endSession()
-    console.log("session ended")
 }
 }
 

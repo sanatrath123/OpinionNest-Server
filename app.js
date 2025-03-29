@@ -19,9 +19,8 @@ app.use(cors({
 }))
 app.use(cookieparser())
 
-
 app.use("/user",userRoutes )
-app.use("/post",authCheeck ,postRoutes)
+app.use("/post",postRoutes)
 
 app.use((err,req,res,next)=>{
     res.status(404).json({error:"internal server error"})

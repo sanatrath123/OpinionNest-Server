@@ -1,6 +1,6 @@
-const input = document.querySelector('.multi')
+const form = document.querySelector('form')
 
-input.addEventListener('change', function(){
-    const files = this.files;
-    console.log(files)
+form.addEventListener('submit', function(e){
+    e.preventDefault()
+console.log(e.target?.[0].files)
 })

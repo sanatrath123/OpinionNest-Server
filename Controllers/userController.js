@@ -6,7 +6,6 @@ export const Signup = async(req,res,next)=>{
 const {name , email , password} = req.body
 try {
    const userData =  await userModel.create({name, email , password})
-   res.cookie('uid', userData._id.toString() , { httpOnly:true , maxAge:7*24*60*60*1000, sameSite:'none', secure:true})
    return res.status(201).json({message:"new user created successfully"})
 } catch (error) {
     console.log("error while creating a new user",error)
@@ -17,12 +16,14 @@ if(error.code==11000 && error.keyValue.email) return res.status(409).json({err:"
 
 
 export const Login = async(req,res,next)=>{
-    console.log('loged in')
     const {email , password} = req.body
     if(!email && !password) return res.status(404)
     const userData = await userModel.findOne({email, password}).lean()
+const cookiesPayload = {
+    id:userData?._id , expire:Math.floor(Date.now()/1000 + 60*60*24)
+}
     if(!userData._id) res.status(404).json({message:"user does not exist"})
-        res.cookie('uid', userData._id.toString() , { httpOnly:true , maxAge:7*24*60*60*1000, sameSite:'none', secure:true})
+        res.cookie('uid', Buffer.from(JSON.stringify(cookiesPayload)).toString('base64url') , { httpOnly:true , maxAge:24*60*60*1000, sameSite:'none', secure:true})
     console.log("yo")
     res.status(200).json({message:"user loged in"})
  }
@@ -38,7 +39,3 @@ export const GetuserData = (req,res,next)=>{
     res.status(200).json({name , email})
 }
 
-
-const setCookies = (res, id)=>{
-    res.cookie('uid', id, {httpOnly:true , maxAge:3600*1000*24 , secure:true, sameSite:'none'})
-}

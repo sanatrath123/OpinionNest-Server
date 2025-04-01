@@ -29,7 +29,6 @@ cb(null , './uploads')
 })
 
 const upload = multer({storage:storage})
-
 router.post('/', upload.fields([{name:'files', maxCount:4}]) ,CreateNewPost)
 
 router.get('/',GetAllPosts)
@@ -40,8 +39,14 @@ router.put("/:postId/:action", Like_Dislike_SavePost)
 
 router.get('/file/:fileId', async (req,res,next)=>{
     const {fileId} = req.params
+    const fileName = fileId.split('.')?.[0]
+ if(mongoose.isValidObjectId(fileName)){
     const readStream = fs.createReadStream(`${process.cwd()}/uploads/${fileId}`)
     readStream.pipe(res)
+    return
+ }else{
+    console.log("invalid file id")
+ }
     })
 
 

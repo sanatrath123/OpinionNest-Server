@@ -22,7 +22,7 @@ export const Login = async(req,res,next)=>{
 const cookiesPayload = {
     id:userData?._id , expire:Math.floor(Date.now()/1000 + 60*60*24)
 }
-    if(!userData._id) res.status(404).json({message:"user does not exist"})
+    if(!userData?._id)return res.status(404).json({message:"user does not exist"})
         res.cookie('uid', Buffer.from(JSON.stringify(cookiesPayload)).toString('base64url') , { httpOnly:true , maxAge:24*60*60*1000, sameSite:'none', secure:true})
     console.log("yo")
     res.status(200).json({message:"user loged in"})
@@ -35,7 +35,7 @@ export const Logout = (req,res,next)=>{
 }
 
 export const GetuserData = (req,res,next)=>{
-    const {name ,email} = req.userData
-    res.status(200).json({name , email})
+    const {name ,email, id} = req.userData
+    res.status(200).json({name , email,id})
 }
 

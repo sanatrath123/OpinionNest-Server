@@ -36,7 +36,7 @@ export const GetAllPosts = async (req,res,next)=>{
     res.status(404).json({err:"can not retrive the posts"})
    }
    const ET = performance.now()
-   console.log(ET- ST)
+   console.log("get all posts",ET- ST)
 }
 
 //Get post by ID
@@ -47,7 +47,7 @@ try {
 res.status(200).json(postData)
 } catch (error) {
     console.log("error while get the file", error)
-    next(new Error())
+    res.status(404).json({err:"invalid id", error})
 }
 }
 
@@ -105,7 +105,7 @@ try {
 }
 }
 
-//like comment and save by other user to a post
+//like downvote and save by other user to a post
 export const Like_Dislike_SavePost = async(req,res,next)=>{
 if(!req.params.postId && !req.params.action) return res.status(404).json({err:"Send a valid post"})
     const userId = req.userData._id
@@ -121,10 +121,10 @@ if(req.params.action=="like"){
 }
 if(req.params.action=="save"){
   if(postData.savedUsers.includes(userId)){
-    await postData.updateOne({$pull:{downVote:userId}})
+    await postData.updateOne({$pull:{savedUsers:userId}})
     return res.status(200).json('unsaved')
   }
-  await postData.updateOne({$addToSet:{downVote:userId}})
+  await postData.updateOne({$addToSet:{savedUsers:userId}})
   return res.status(200).json('saved')
 }
 if(req.params.action == 'dislike'){

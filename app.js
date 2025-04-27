@@ -4,7 +4,7 @@ import cookieparser from 'cookie-parser'
 import userRoutes from './Routes/userRoutes.js'
 import postRoutes from "./Routes/posts/postRoutes.js"
 import authCheeck from './Middlewares/authMiddleware.js'
-
+import commnetRouter from './Routes/posts/commentRoutes.js'
 
 import "./config/db.js"
 
@@ -20,7 +20,9 @@ app.use(cors({
 app.use(cookieparser())
 
 app.use("/user",userRoutes )
+//app.use("/post",authCheeck,postRoutes)
 app.use("/post",authCheeck,postRoutes)
+app.use('/cmt', authCheeck , commnetRouter)
 
 app.use((err,req,res,next)=>{
     res.status(404).json({error:"internal server error"})

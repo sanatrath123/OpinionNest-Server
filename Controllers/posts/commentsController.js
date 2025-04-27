@@ -1,39 +1,81 @@
 import mongoose from 'mongoose'
 import commentModel from '../../Model/posts/commentsModel.js'
-import PostModel from '../../Model/posts/postModel.js'
-
 
 export const AddNewCmnt = async(req,res,next)=>{
     const userId = req.userData._id
     const usercmt = req.body.comment
     const cmtSecId = req.params.cmtId
-    const session =await mongoose.startSession()
    try {
-    session.startTransaction()
- const cmtSecData =  await commentModel.findByIdAndUpdate({_id:cmtSecId} , {$push:{comments:{userId , usercmt}}}, {session})
-    await PostModel.updateOne({_id:cmtSecData.id, 'commentSection.id':cmtSecId} , {$inc:{'commentSection.totalCmt':1}}, {session})
+  await commentModel.findByIdAndUpdate({_id:cmtSecId} , {$push:{comments:{userId , usercmt}}}, {session})
     res.status(201).json({msg:"new cmnt added"})
-   await session.commitTransaction()
    } catch (error) {
    await session.abortTransaction()
     console.log("error while adding a commnet" , error)
     next(new Error())
    }
-  await session.endSession()
+
 }
 
 
 export const GetAllComments = async(req,res,next)=>{
-        const userData = req.userData
+        const uid = req.userData?._id
+        const {cmtId} = req.params
  try {
-    const docs = await commentModel.findById(req.params.id)
-    const data = docs.toJSON()
-    data.comments = data.comments.map((item)=>{
-      item.isliked= item.likes.includes(userData._id)
-      item.isDisliked = item.dislikes.includes(userData._id)
-      return item
-    })
-    res.json(data)
+const data = await commentModel.aggregate([
+    {
+        $match:{
+            _id: new mongoose.Types.ObjectId(String(cmtId)), isDeleted:false
+        }
+    },{
+        $unwind:"$comments"
+    },
+    {
+        $sort:{
+            "comments.likes":-1
+        }
+            },
+    {
+        $lookup:{
+            from:'users',
+            localField:'comments.userId',
+            foreignField:"_id",
+            pipeline:[
+                {
+                    $project:{name:1}
+                }
+            ],
+            as:'comments.userId'
+        }
+    },
+    {
+        $addFields:{
+            "comments.totalLikes":{$size:"$comments.likes"},
+            "comments.totalDownVote":{$size:"$comments.dislikes"},
+            "comments.isLiked":{$in:[uid ,"$comments.likes"]},
+            "comments.isDisLike":{$in:[uid ,"$comments.dislikes"]},
+        }
+    },
+    {
+        $project:{
+            "comments.likes":0 , "comments.dislikes":0
+        }
+    }  ,
+    {
+         $unwind:"$comments.userId"
+    }
+    ,{
+        $unwind:"$comments"
+    },
+
+    {
+        $group:{
+            _id:"$_id",
+            comments:{$push:"$comments"},
+            postId:{$first:"$postId"}
+        }
+    },
+])
+res.status(200).json(data?.[0])
  } catch (error) {
     console.log('errro while get the cmt', error)
     next(new Error())
@@ -43,16 +85,16 @@ export const GetAllComments = async(req,res,next)=>{
 
 export const DeleteComment = async(req,res,next)=>{
     const userData = req.userData
-    const {delcmnt} = req.body
+    const {delcmntId} = req.body
    
  try {
-    const data = await commentModel.findOneAndUpdate({_id:req.params.cmtId } ,
+  await commentModel.updateOne({_id:req.params.cmtId } ,
         {
-        $pull:{comments:{userId:userData._id , usercmt:delcmnt}}
+        $pull:{comments:{userId:userData._id , _id:delcmntId}}
     },
        {new:true}
-       ).lean()
-    res.status(200).json(data)
+       )
+    res.status(200).json({msg:"cmnt deleted"})
  } catch (error) {
     console.log("error while delete the cmnt", error)
     next(new Error())
@@ -64,10 +106,10 @@ export const EditComment =  async(req,res,next)=>{
     const userData = req.userData
     const {newCommnet, prevCmnt} = req.body
     const comntId = req.params.cmtId
-    const cmntSec = await commentModel.findOneAndUpdate({_id:comntId , 'comments.userId':userData._id , 'comments.usercmt':prevCmnt}, {$set:{'comments.$usercmt':newCommnet}}, {new:true})
-   if(!cmntSec._id) return next(new Error())
     try {
-        await cmntSec.save()
+        const cmntRes = await commentModel.updateOne({_id:comntId , 'comments.userId':userData._id , 'comments.usercmt':prevCmnt}, {$set:{'comments.$usercmt':newCommnet}})
+        if(cmntRes.modifiedCount)return res.status(200).json({msg:"edit the prev comnt"})
+    return res.status(404).json({err:"new cmnt nit added"})
     } catch (error) {
         console.log("error in cmt edit", error)
         next(new Error())
@@ -77,63 +119,39 @@ export const EditComment =  async(req,res,next)=>{
 
 export const LikeComment= async (req,res,next)=>{
     const userData = req.userData
-    const { cmtSecId} = req.body
-    const {cmntId} = req.params
-    const commnetSec = await commentModel.findById(cmtSecId)
-//not db call only looping
-   const actionComment = commnetSec.comments.find((item)=>item._id.toString()== cmntId)
-   const action = actionComment.likes.includes(userData._id) 
-if(!action){
-    try {
-        const updatedData =  await commentModel.findOneAndUpdate(
-            { _id: cmtSecId, 'comments._id': req.params.cmntId }, 
-            { $addToSet: { 'comments.$.likes': userData._id },
-            $pull:{'comments.$.dislikes':userData._id}
-         } , {new:true}
-          );
-     return   res.status(200).json(updatedData)
-    } catch (error) {
-     return   console.log("error while user like the cmt", error)
+    const { cmtSecId, isLiked, isDisliked} = req.body
+    const {cmntId,action} = req.params
+    let updatedData 
+   try {
+if(action=='like'){
+    if(isLiked){
+        updatedData=  await commentModel.updateOne({ _id: cmtSecId, 'comments._id':cmntId }, 
+              { $addToSet: { 'comments.$.likes': userData._id },
+              $pull:{'comments.$.dislikes':userData?._id}
+           });
+         if(!updatedData.modifiedCount)  return next(new Error)
+           return  res.status(200).json({msg:"liked cmnt"})
+      }
+      updatedData = await commentModel.updateOne({_id:cmtSecId, "comments._id":cmntId},
+          {$pull:{"comments.$.likes":userData?._id}})
+        if(!updatedData.modifiedCount) return next(new Error)
+           return res.status(200).json({msg:"like removed"})
+      } 
+      if(!isDisliked){
+        updatedData = await commentModel.updateOne({_id:cmtSecId,"comments._id":cmntId },
+            { $addToSet: { 'comments.$.dislikes': userData._id },
+              $pull:{'comments.$.likes':userData?._id}}
+        )
+        if(!updatedData.modifiedCount)  return next(new Error)
+            return  res.status(200).json({msg:"disliked cmnt"})
     }
+    updatedData = await commentModel.updateOne({_id:cmtSecId, "comments._id":cmntId},
+        {$pull:{"comments.$.dislikes":userData?._id}})
+      if(!updatedData.modifiedCount) return next(new Error)
+         return res.status(200).json({msg:"dislike removed"})
 }
-try {
-    const updatedData =  await commentModel.findOneAndUpdate({_id:cmtSecId, 'comments._id':req.params.cmntId}, 
-        {$pull:{'comments.$.likes':userData._id}} , {new:true})
-    res.status(200).json(updatedData)
-   } catch (error) {
-   return console.log("while remove the like from cmt",error)
-   } 
+catch (error) {
+    return   console.log("error while user like and dislike the cmt", error)
 }
-
-export const DisLikeComment = async(req, res)=>{
-    const userData = req.userData
-    const {cmtId} = req.params
-    const {cmtSecId} = req.body
-const commentsec =await commentModel.findById(cmtSecId)
-
-const targetCmnt = commentsec.comments.find((item)=>item._id.toString()==cmtId) 
-const action = targetCmnt.dislikes.includes(userData._id)
-if(action){
-  try {
-    const updatedData =  await commentModel.findOneAndUpdate(
-        {_id:cmtSecId , 'comments._id':cmtId},
-    {$pull:{'comments.$.dislikes':userData._id}},{new:true}
-    )
-   return res.status(200).json(updatedData)
-  } catch (error) {
-    console.log("erroe while remove dislike a cmnt", error)
-  return  res.status(404)
-  }
-}
-try {
-  const updatedData =  await commentModel.findOneAndUpdate({_id:cmtSecId , 'comments._id':cmtId},
-        {$addToSet:{'comments.$.dislikes':userData._id},
-        $pull:{'comments.$.likes':userData._id}
-    } , {new:true})
-        return res.status(200).json(updatedData)
-} catch (error) {
-    console.log("error while dislike a cmnt ", error)
-    return  res.status(404)
 }
 
-}

@@ -2,7 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import multer from 'multer';
 import path from "path";
-import { CreateNewPost, GetAllPosts, Getpost, DeletePost,UpdatePostByAuthor ,Like_Dislike_SavePost} from "../../Controllers/posts/postController.js";
+import { CreateNewPost, Getpost, DeletePost,UpdatePostByAuthor ,Like_Dislike_SavePost,OptimizeGetPost} from "../../Controllers/posts/postController.js";
 import CheeckID from "../../Middlewares/isValidID.js";
 import fs from 'fs';
 import commentsRoutes from './commentRoutes.js'
@@ -31,8 +31,7 @@ cb(null , './uploads')
 const upload = multer({storage:storage})
 router.post('/', upload.fields([{name:'files', maxCount:4}]) ,CreateNewPost)
 
-router.get('/',GetAllPosts)
-
+router.get('/',OptimizeGetPost)
 router.route('/:postId').get(Getpost).delete(DeletePost).patch(UpdatePostByAuthor)
 
 router.put("/:postId/:action", Like_Dislike_SavePost)

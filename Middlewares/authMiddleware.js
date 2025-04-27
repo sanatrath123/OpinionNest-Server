@@ -14,6 +14,11 @@ const AuthCheeck = async(req,res,next)=>{
     if(!userData._id) return res.status(404).json({err:"user does not exist"})
     req.userData = userData
     next()
+    // const {uid} = req.cookies
+    // const userData = await userModel.findById(uid, 'name email ')
+    // if(!userData._id) return res.status(404).json({err:"user does not exist"})
+    // req.userData = userData
+    // next()
 }
 
 export default AuthCheeck

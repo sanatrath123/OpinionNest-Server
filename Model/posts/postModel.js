@@ -43,16 +43,16 @@ softDeletePost(){
 },  
 strict:'throw' , timestamps:true, toJSON:{virtuals:true} , toObject:{virtuals:true}})
 
-postSchema.virtual('TotalLikes').get(function(){
-    return  this.likes.length
-})
+// postSchema.virtual('TotalLikes').get(function(){
+//     return  this.likes.length
+// })
 
-postSchema.virtual('TotalDownVote').get(function(){
-    return  this.downVote.length
-})
-postSchema.virtual('TotalSaves').get(function(){
-    return  this.savedUsers.length
-})
+// postSchema.virtual('TotalDownVote').get(function(){
+//     return  this.downVote.length
+// })
+// postSchema.virtual('TotalSaves').get(function(){
+//     return  this.savedUsers.length
+// })
 
 
 

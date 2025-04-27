@@ -2,6 +2,7 @@ import mongoose from "mongoose"
 import PostModel from "../../Model/posts/postModel.js";
 import commentModel from "../../Model/posts/commentsModel.js";
 import fs from 'node:fs/promises'
+import { pid } from "node:process";
 
 export const CreateNewPost = async (req,res,next)=>{
 const session = await mongoose.startSession()
@@ -26,25 +27,129 @@ try {
 }
 
 //GetAll posts
-export const GetAllPosts = async (req,res,next)=>{
-    const ST = performance.now()
-   try {
-    const AllPosts = await PostModel.find({isDeleted:false}).populate({path:'author' , select:'_id name'})
-    res.status(200).json(AllPosts)
-   } catch (error) {
-    console.log("error whiel geting all post")
-    res.status(404).json({err:"can not retrive the posts"})
-   }
-   const ET = performance.now()
-   console.log("get all posts",ET- ST)
+export const OptimizeGetPost = async (req,res,next)=>{
+    const userId = req.userData?._id
+try {
+    const allPost = await PostModel.aggregate([
+        {
+            $match:{
+                isDeleted:false
+            }
+        },
+        {
+                    $lookup:{
+                       from:'users' ,
+                       localField:"author",
+                       foreignField:"_id",
+                   pipeline:[
+                    {$project:{name:1 }}
+                   ],
+                       as:"userdetails"
+                    }
+            },
+            {
+                $lookup:{
+            from:'comments',
+            localField:"commentSection.id",
+            foreignField:"_id",
+            pipeline:[
+        {$addFields:{totalCmts:{$size:{$ifNull: ['$comments', []]}}},},
+        {$project:{totalCmts:1}}
+            ],
+            as:"commnetSec"
+          }  
+            },
+                {
+        
+                    $addFields:{
+                        totalLikes:{$size:"$likes"},
+                        totalDownVote:{$size:"$downVote"},
+                        totalSaves:{$size:"$savedUsers"},
+                        isLiked:{$in:[userId, "$likes"]},
+                        isDownvote:{$in:[userId , "$downVote"]},
+                        isSaved:{$in:[userId,"$savedUsers"]},
+                    }
+                },
+                {
+                $project:{
+                    likes:0 , downVote:0 , savedUsers:0,commentSection:0, author:0
+                }
+            }, {
+                $unwind:{
+                    path:"$userdetails",preserveNullAndEmptyArrays:true
+                }
+            },
+        
+            ])
+           return res.status(200).json(allPost)
+} catch (error) {
+    console.log("error while getting all posts", error)
+    return next(new Error)
 }
+}
+
 
 //Get post by ID
 export const Getpost = async (req,res,next)=>{
 const {postId} = req.params
+const userId = req.userData._id
 try {
-    const postData = await PostModel.findOne({_id:postId, isDeleted:false}).populate( [{path:'author', select:'name'} ,{path:'commentSection.id', select:"comments.userId comments.usercmt comments.likes comments.dislikes " } ])
-res.status(200).json(postData)
+ const postData = await PostModel.aggregate([
+    {
+        $match:{
+         _id:new mongoose.Types.ObjectId(String(postId)),   isDeleted:false
+        },    
+    },
+
+{
+   $lookup:{
+    from:'users',
+    localField:"author",
+    foreignField:"_id",
+    pipeline:[
+        {
+            $project:{name:1}
+        }
+    ],
+    as:"userDetails"
+   }
+},
+{
+    $lookup:{
+        from:"comments",
+        localField:"commentSection.id",
+        foreignField:"_id",
+        pipeline:[
+            {$addFields:{ totalCmts:{$size:'$comments'},}},
+            {$project:{totalCmts:1}}
+        ],
+        as:"commnetSec"
+    },
+},
+{
+    $addFields:{
+        isLiked:{$in:[userId, "$likes"]},
+        isDownvote:{$in:[userId, "$downVote"]},
+        isSaved:{$in:[userId, "$savedUsers"]},
+        totalLikes:{$size:'$likes'},
+        totalDownVote:{$size:'$downVote'}
+    }
+},
+{
+    $project:{
+        likes:0 , downVote:0 , saveUsers:0, commentSection:0
+    }
+},
+{
+    $unwind:"$userDetails"
+},
+{
+    $unwind:'$commnetSec'
+}
+
+ ])
+ 
+res.status(200).json(postData?.[0])
 } catch (error) {
     console.log("error while get the file", error)
     res.status(404).json({err:"invalid id", error})
@@ -108,7 +213,7 @@ try {
 //like downvote and save by other user to a post
 export const Like_Dislike_SavePost = async(req,res,next)=>{
 if(!req.params.postId && !req.params.action) return res.status(404).json({err:"Send a valid post"})
-    const userId = req.userData._id
+    const userId = req.userData?._id
 try {
     const postData =await PostModel.findById(req.params.postId)
 if(req.params.action=="like"){
@@ -145,3 +250,4 @@ if(req.params.action == 'dislike'){
 }
 
 //restore the post
+
